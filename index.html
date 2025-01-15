@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KeyboardEvent状態のリアルタイム表示</title>
+  <style>
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 50px;
+    }
+    label {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    #keyEvent {
+      color: #666;
+      min-width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <input type="text" id="textInput" placeholder="ここに入力...">
+    <label id="imeStatus">IME状態: OFF</label>
+    <label id="keyEvent">キーイベント: なし</label>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
