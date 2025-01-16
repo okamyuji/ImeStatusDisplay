@@ -18,7 +18,7 @@ textInput.addEventListener('compositionend', function () {
 });
 // keydownイベントでIME状態を判定
 textInput.addEventListener('keydown', function (e) {
-    if (e.isComposing || e.key === 'Process' || e.keyCode === 229) {
+    if (e.isComposing || e.key === 'Process' || e.key === 'Unidentified') {
         isComposing = true;
         updateIMEStatus('ON');
     }

@@ -22,7 +22,7 @@ textInput.addEventListener('compositionend', () => {
 
 // keydownイベントでIME状態を判定
 textInput.addEventListener('keydown', (e: KeyboardEvent) => {
-  if (e.isComposing || e.key === 'Process' || e.keyCode === 229) {
+  if (e.isComposing || e.key === 'Process' || e.key === 'Unidentified') {
     isComposing = true;
     updateIMEStatus('ON');
   } else {
