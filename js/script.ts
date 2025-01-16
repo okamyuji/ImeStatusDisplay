@@ -3,57 +3,25 @@ const imeStatusLabel = document.getElementById('imeStatus') as HTMLLabelElement;
 const keyEventLabel = document.getElementById('keyEvent') as HTMLLabelElement;
 
 let isComposing: boolean = false;
-let lastInputTime: number = 0;
-let lastKeyEvent: number = 0;
-const IME_CHECK_INTERVAL: number = 100; // 100ミリ秒ごとにチェック
-
 const isIOSSafari = /iP(ad|hone|od).+Version\/[\d\.]+ Safari/i.test(navigator.userAgent);
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 const isChrome = /chrome/i.test(navigator.userAgent);
 
-// IME状態を定期的にチェック
-setInterval(() => {
-  const now = Date.now();
-  if (isComposing) {
-    // Chrome特有の処理: キーイベントが一定時間ない場合にIME状態を再確認
-    if (isChrome && now - lastKeyEvent > 1000) {
-      const selection = window.getSelection();
-      const range = selection?.getRangeAt(0);
-      // IMEの変換候補が表示されていない場合
-      if (!range || !range.collapsed) {
-        isComposing = false;
-        updateIMEStatus('OFF');
-      }
-    }
-    // 他のブラウザの処理
-    else if (now - lastInputTime > 500) {
-      if (!textInput.matches(':has(> *)') && !document.activeElement?.matches(':has(> *)')) {
-        isComposing = false;
-        updateIMEStatus('OFF');
-      }
-    }
-  }
-}, IME_CHECK_INTERVAL);
-
 // compositionstart と compositionend を使ってフラグを管理
 textInput.addEventListener('compositionstart', () => {
   isComposing = true;
-  lastInputTime = Date.now();
   updateIMEStatus('ON');
   updateKeyEvent('IME入力開始');
 });
 
 textInput.addEventListener('compositionend', () => {
   isComposing = false;
-  lastInputTime = Date.now();
   updateIMEStatus('OFF');
   updateKeyEvent('IME入力確定');
 });
 
 // keydownイベントでIME状態を判定
 textInput.addEventListener('keydown', (e: KeyboardEvent) => {
-  lastInputTime = Date.now();
-  lastKeyEvent = Date.now();
   if (e.isComposing || e.key === 'Process' || e.keyCode === 229) {
     isComposing = true;
     updateIMEStatus('ON');
@@ -101,26 +69,19 @@ textInput.addEventListener('keydown', (e: KeyboardEvent) => {
 
 // inputイベントでIME状態を確認
 textInput.addEventListener('input', (e: Event) => {
-  lastInputTime = Date.now();
   const inputEvent = e as InputEvent;
   const imeTypes = ['insertCompositionText', 'deleteCompositionText', 'insertFromComposition', 'deleteByComposition'];
 
-  if (inputEvent.inputType && imeTypes.includes(inputEvent.inputType)) {
+  if (inputEvent.inputType && imeTypes.indexOf(inputEvent.inputType) !== -1) {
     isComposing = true;
     updateIMEStatus('ON');
   } else if (isIOSSafari) {
     // iOS Safari 固有の処理
-    // iOS Safariではinputイベント時に入力中かどうかを判定
     const hasImeInput = textInput.value.match(/[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/);
     if (hasImeInput) {
       isComposing = true;
       updateIMEStatus('ON');
-    } else if (isComposing && Date.now() - lastInputTime > 300) {
-      isComposing = false;
-      updateIMEStatus('OFF');
     }
-  } else if (!isComposing) {
-    updateIMEStatus('OFF');
   }
 });
 

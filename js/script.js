@@ -2,37 +2,22 @@ var textInput = document.getElementById('textInput');
 var imeStatusLabel = document.getElementById('imeStatus');
 var keyEventLabel = document.getElementById('keyEvent');
 var isComposing = false;
-var lastInputTime = 0;
-var IME_CHECK_INTERVAL = 100; // 100ミリ秒ごとにチェック
-// IME状態を定期的にチェック
-setInterval(function () {
-    var _a;
-    var now = Date.now();
-    // 最後の入力から500ミリ秒経過し、かつIMEがONの状態の場合
-    if (now - lastInputTime > 500 && isComposing) {
-        // IMEの状態を再確認
-        if (!textInput.matches(':has(> *)') && !((_a = document.activeElement) === null || _a === void 0 ? void 0 : _a.matches(':has(> *)'))) {
-            isComposing = false;
-            updateIMEStatus('OFF');
-        }
-    }
-}, IME_CHECK_INTERVAL);
+var isIOSSafari = /iP(ad|hone|od).+Version\/[\d\.]+ Safari/i.test(navigator.userAgent);
+var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+var isChrome = /chrome/i.test(navigator.userAgent);
 // compositionstart と compositionend を使ってフラグを管理
 textInput.addEventListener('compositionstart', function () {
     isComposing = true;
-    lastInputTime = Date.now();
     updateIMEStatus('ON');
     updateKeyEvent('IME入力開始');
 });
 textInput.addEventListener('compositionend', function () {
     isComposing = false;
-    lastInputTime = Date.now();
     updateIMEStatus('OFF');
     updateKeyEvent('IME入力確定');
 });
 // keydownイベントでIME状態を判定
 textInput.addEventListener('keydown', function (e) {
-    lastInputTime = Date.now();
     if (e.isComposing || e.key === 'Process' || e.keyCode === 229) {
         isComposing = true;
         updateIMEStatus('ON');
@@ -84,15 +69,19 @@ textInput.addEventListener('keydown', function (e) {
 });
 // inputイベントでIME状態を確認
 textInput.addEventListener('input', function (e) {
-    lastInputTime = Date.now();
     var inputEvent = e;
     var imeTypes = ['insertCompositionText', 'deleteCompositionText', 'insertFromComposition', 'deleteByComposition'];
     if (inputEvent.inputType && imeTypes.indexOf(inputEvent.inputType) !== -1) {
         isComposing = true;
         updateIMEStatus('ON');
     }
-    else if (!isComposing) {
-        updateIMEStatus('OFF');
+    else if (isIOSSafari) {
+        // iOS Safari 固有の処理
+        var hasImeInput = textInput.value.match(/[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/);
+        if (hasImeInput) {
+            isComposing = true;
+            updateIMEStatus('ON');
+        }
     }
 });
 // フォーカスが外れた時の処理
