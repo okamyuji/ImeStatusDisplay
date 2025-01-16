@@ -4,20 +4,33 @@ const keyEventLabel = document.getElementById('keyEvent') as HTMLLabelElement;
 
 let isComposing: boolean = false;
 let lastInputTime: number = 0;
+let lastKeyEvent: number = 0;
 const IME_CHECK_INTERVAL: number = 100; // 100ミリ秒ごとにチェック
 
 const isIOSSafari = /iP(ad|hone|od).+Version\/[\d\.]+ Safari/i.test(navigator.userAgent);
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const isChrome = /chrome/i.test(navigator.userAgent);
 
 // IME状態を定期的にチェック
 setInterval(() => {
   const now = Date.now();
-  // 最後の入力から500ミリ秒経過し、かつIMEがONの状態の場合
-  if (now - lastInputTime > 500 && isComposing) {
-    // IMEの状態を再確認
-    if (!textInput.matches(':has(> *)') && !document.activeElement?.matches(':has(> *)')) {
-      isComposing = false;
-      updateIMEStatus('OFF');
+  if (isComposing) {
+    // Chrome特有の処理: キーイベントが一定時間ない場合にIME状態を再確認
+    if (isChrome && now - lastKeyEvent > 1000) {
+      const selection = window.getSelection();
+      const range = selection?.getRangeAt(0);
+      // IMEの変換候補が表示されていない場合
+      if (!range || !range.collapsed) {
+        isComposing = false;
+        updateIMEStatus('OFF');
+      }
+    }
+    // 他のブラウザの処理
+    else if (now - lastInputTime > 500) {
+      if (!textInput.matches(':has(> *)') && !document.activeElement?.matches(':has(> *)')) {
+        isComposing = false;
+        updateIMEStatus('OFF');
+      }
     }
   }
 }, IME_CHECK_INTERVAL);
@@ -40,6 +53,7 @@ textInput.addEventListener('compositionend', () => {
 // keydownイベントでIME状態を判定
 textInput.addEventListener('keydown', (e: KeyboardEvent) => {
   lastInputTime = Date.now();
+  lastKeyEvent = Date.now();
   if (e.isComposing || e.key === 'Process' || e.keyCode === 229) {
     isComposing = true;
     updateIMEStatus('ON');
