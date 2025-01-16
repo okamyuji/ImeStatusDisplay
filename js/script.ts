@@ -6,6 +6,8 @@ let isComposing: boolean = false;
 let lastInputTime: number = 0;
 const IME_CHECK_INTERVAL: number = 100; // 100ミリ秒ごとにチェック
 
+const isIOSSafari = /iP(ad|hone|od).+Version\/[\d\.]+ Safari/i.test(navigator.userAgent);
+
 // IME状態を定期的にチェック
 setInterval(() => {
   const now = Date.now();
@@ -87,9 +89,16 @@ textInput.addEventListener('input', (e: Event) => {
   lastInputTime = Date.now();
   const inputEvent = e as InputEvent;
   const imeTypes = ['insertCompositionText', 'deleteCompositionText', 'insertFromComposition', 'deleteByComposition'];
-  if (inputEvent.inputType && imeTypes.indexOf(inputEvent.inputType) !== -1) {
+
+  if (inputEvent.inputType && imeTypes.includes(inputEvent.inputType)) {
     isComposing = true;
     updateIMEStatus('ON');
+  } else if (isIOSSafari) {
+    // iOS Safari 固有の処理
+    if (isComposing && Date.now() - lastInputTime > 300) {
+      isComposing = false;
+      updateIMEStatus('OFF');
+    }
   } else if (!isComposing) {
     updateIMEStatus('OFF');
   }
