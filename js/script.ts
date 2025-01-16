@@ -7,6 +7,7 @@ let lastInputTime: number = 0;
 const IME_CHECK_INTERVAL: number = 100; // 100ミリ秒ごとにチェック
 
 const isIOSSafari = /iP(ad|hone|od).+Version\/[\d\.]+ Safari/i.test(navigator.userAgent);
+const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 // IME状態を定期的にチェック
 setInterval(() => {
@@ -95,7 +96,12 @@ textInput.addEventListener('input', (e: Event) => {
     updateIMEStatus('ON');
   } else if (isIOSSafari) {
     // iOS Safari 固有の処理
-    if (isComposing && Date.now() - lastInputTime > 300) {
+    // iOS Safariではinputイベント時に入力中かどうかを判定
+    const hasImeInput = textInput.value.match(/[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/);
+    if (hasImeInput) {
+      isComposing = true;
+      updateIMEStatus('ON');
+    } else if (isComposing && Date.now() - lastInputTime > 300) {
       isComposing = false;
       updateIMEStatus('OFF');
     }
